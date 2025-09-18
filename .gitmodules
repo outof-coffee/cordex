@@ -1,4 +1,0 @@
-[submodule "sanshas-helper"]
-	path = sanshas-helper
-	url = ../sanshas-helper
-	branch = feature/friendly-intel
