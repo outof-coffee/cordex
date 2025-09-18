@@ -1,0 +1,49 @@
+{
+  "name": "@outof-coffee/discord-wheel",
+  "version": "0.1.0",
+  "description": "Core library extracting base functionality from sanshas-helper",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "npx vitest run",
+    "test:watch": "npx vitest",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build && npm test"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "database",
+    "storage",
+    "repository",
+    "typescript",
+    "discord",
+    "lowdb"
+  ],
+  "author": "outof-coffee",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/outof-coffee/discord-wheel.git"
+  },
+  "bugs": {
+    "url": "https://github.com/outof-coffee/discord-wheel/issues"
+  },
+  "homepage": "https://github.com/outof-coffee/discord-wheel#readme",
+  "dependencies": {
+    "lowdb": "^7.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.13",
+    "typescript": "^5.8.3",
+    "vitest": "^2.0.5"
+  }
+}
