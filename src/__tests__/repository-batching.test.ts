@@ -36,10 +36,12 @@ describe('Repository Write Batching System', () => {
   };
 
   beforeEach(async () => {
+    // Clear timers first
+    vi.useRealTimers();
     vi.clearAllMocks();
     vi.useFakeTimers();
 
-    // Reset repository internal state
+    // Reset repository internal state completely
     (repository as any).config = null;
     (repository as any).initialized = false;
     (repository as any).dbInstance = null;
@@ -53,19 +55,41 @@ describe('Repository Write Batching System', () => {
       lastWriteTime: 0
     };
 
-    // Setup mock database
+    // Reset mock database instance data
     mockDbInstance.data = {};
+
+    // Reset mock implementation completely
+    mockWrite.mockClear();
     mockWrite.mockResolvedValue(undefined);
 
     const { JSONFilePreset } = await import('lowdb/node');
+    (JSONFilePreset as any).mockClear();
     (JSONFilePreset as any).mockResolvedValue(mockDbInstance);
+
 
     // Initialize repository
     await repository.initialize({ databasePath: testDatabasePath } as RepositoryConfig);
+
+    // Ensure database instance is properly initialized for tests
+    // This prevents race conditions with async timer operations
+    (repository as any).dbInstance = mockDbInstance;
   });
 
   afterEach(() => {
+    // Clear any pending timeouts from the repository
+    if ((repository as any).writeTimeout) {
+      clearTimeout((repository as any).writeTimeout);
+      (repository as any).writeTimeout = null;
+    }
+
+    // Clear any pending writes without executing them
+    (repository as any).pendingWrites = [];
+    (repository as any).isWriting = false;
+
+    // Run any pending timers to completion
     vi.runOnlyPendingTimers();
+
+    // Now it's safe to restore real timers
     vi.useRealTimers();
   });
 
@@ -171,18 +195,28 @@ describe('Repository Write Batching System', () => {
 
       const storePromises = entities.map(entity => repository.store(entity));
 
+      // Check initial state
+      expect((repository as any).pendingWrites).toHaveLength(101);
+      expect(mockWrite).toHaveBeenCalledTimes(0);
+
       // Process first batch (100 items)
       vi.advanceTimersByTime(50);
       await vi.runOnlyPendingTimersAsync();
 
-      // Process second batch (1 item)
+      // The first batch should process all 100 items, triggering another timer for the remaining 1
+      // So we might have 2 calls already due to the automatic scheduling
+
+      // Process any remaining batches
       vi.advanceTimersByTime(50);
       await vi.runOnlyPendingTimersAsync();
 
+      // Wait for all store operations to complete
       await Promise.all(storePromises);
 
+      // Verify final state - should have called write twice (once for 100 items, once for 1 item)
       expect(mockWrite).toHaveBeenCalledTimes(2);
       expect(mockDbInstance.data[testGuildId][TestBatchEntity.storageKey]).toHaveLength(101);
+      expect((repository as any).pendingWrites).toHaveLength(0);
     });
   });
 

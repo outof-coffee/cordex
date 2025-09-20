@@ -1,0 +1,25 @@
+{
+  "name": "discord-wheel-example-bot",
+  "version": "1.0.0",
+  "description": "Example Discord bot demonstrating discord-wheel library usage",
+  "main": "dist/index.js",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@outof-coffee/discord-wheel": "file:../..",
+    "discord.js": "^14.15.3",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,8 +1,10 @@
 {
   "name": "@outof-coffee/discord-wheel",
   "version": "0.1.0",
+  "type": "module",
   "description": "Core library extracting base functionality from sanshas-helper",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "publishConfig": {
     "access": "public"
