@@ -34,7 +34,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/outof-coffee/discord-wheel.git"
+    "url": "git+https://github.com/outof-coffee/discord-wheel.git"
   },
   "bugs": {
     "url": "https://github.com/outof-coffee/discord-wheel/issues"
