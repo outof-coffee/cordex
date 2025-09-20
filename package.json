@@ -2,7 +2,7 @@
   "name": "@outof-coffee/discord-wheel",
   "version": "0.1.0",
   "type": "module",
-  "description": "Core library extracting base functionality from sanshas-helper",
+  "description": "Core library for data persistence per-guild in a discord bot",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -34,7 +34,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/outof-coffee/discord-wheel.git"
+    "url": "https://github.com/outof-coffee/discord-wheel.git"
   },
   "bugs": {
     "url": "https://github.com/outof-coffee/discord-wheel/issues"
