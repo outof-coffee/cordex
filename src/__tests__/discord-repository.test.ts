@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { DiscordRepository, DiscordRepositoryConfig, GuildConfig, GuildUser, TempMute } from '../discord';
-import { Repository } from '../repository-types';
+import { Repository } from '../repository';
 
 // Mock base repository
 const mockBaseRepository: Repository = {

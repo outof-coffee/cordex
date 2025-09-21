@@ -1,26 +1,5 @@
-import { DatabaseObject, DatabaseCollection, Purgeable, IdentifiedEntity } from './types';
-import { Repository, RepositoryConfig } from './repository-types';
-
-interface DatabaseData {
-  [guildId: string]: {
-    [storageKey: string]: DatabaseObject[] | DatabaseCollection<any>[];
-  };
-}
-
-interface PendingWrite {
-  guildId: string;
-  storageKey: string;
-  data: DatabaseObject | DatabaseCollection<any>;
-  resolve: () => void;
-  reject: (error: Error) => void;
-}
-
-interface PerformanceMetrics {
-  totalWrites: number;
-  batchedWrites: number;
-  avgWriteTime: number;
-  lastWriteTime: number;
-}
+import { Repository, RepositoryConfig, DatabaseData, PendingWrite, PerformanceMetrics } from './types';
+import { DatabaseObject, DatabaseCollection, Purgeable, IdentifiedEntity } from '../types';
 
 class DatabaseRepository implements Repository {
   private config: RepositoryConfig | null = null;
@@ -327,3 +306,6 @@ class DatabaseRepository implements Repository {
 }
 
 export const repository: Repository = new DatabaseRepository();
+
+// Exports
+export { Repository, RepositoryConfig, DatabaseObject } from './types';

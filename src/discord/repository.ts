@@ -3,7 +3,7 @@
  * Extends the base repository with Discord bot optimizations
  */
 
-import { Repository, RepositoryConfig } from '../repository-types';
+import { Repository, RepositoryConfig } from '../repository';
 import { DatabaseObject, Purgeable, IdentifiedEntity } from '../types';
 import { validateGuildId } from './entities';
 

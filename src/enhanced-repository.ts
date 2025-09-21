@@ -3,7 +3,7 @@
  * Extends the base repository with powerful query and management capabilities
  */
 
-import { Repository } from './repository-types';
+import { Repository, repository } from './repository';
 import { DatabaseObject, Purgeable, IdentifiedEntity } from './types';
 import { DiscordRepository, DiscordRepositoryConfig } from './discord';
 import { EntityRegistry, entityRegistry } from './entity-registry';
@@ -76,7 +76,7 @@ export class EnhancedRepository implements Repository {
   constructor(baseRepository?: Repository, registry?: EntityRegistry) {
     this.baseRepository = baseRepository instanceof DiscordRepository
       ? baseRepository
-      : new DiscordRepository(baseRepository || require('./repository').repository);
+      : new DiscordRepository(baseRepository || repository);
     this.registry = registry || entityRegistry;
   }
 

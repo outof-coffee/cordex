@@ -6,11 +6,10 @@
  */
 
 // Main repository interface - use this for all Discord bot database operations
-export { repository } from './repository';
-export { Repository, RepositoryConfig } from './repository-types';
+export { repository, Repository, RepositoryConfig, DatabaseObject } from './repository';
 
 // Base types for creating Discord bot database entities
-export { DatabaseObject, DatabaseEntity, DatabaseCollection, Purgeable, IdentifiedEntity } from './types';
+export { DatabaseEntity, DatabaseCollection, Purgeable, IdentifiedEntity } from './types';
 
 // Discord-specific entity types, repository, and utilities
 export {

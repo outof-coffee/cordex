@@ -1,4 +1,4 @@
-import { DatabaseObject, DatabaseCollection, Purgeable, IdentifiedEntity } from './types';
+import { DatabaseObject, DatabaseCollection, Purgeable, IdentifiedEntity } from '../types';
 
 export { DatabaseObject };
 
@@ -31,4 +31,26 @@ export interface Repository {
     objectId: string
   ): Promise<boolean>;
   flushPendingWrites(): Promise<void>;
+}
+
+// Internal repository types
+export interface DatabaseData {
+  [guildId: string]: {
+    [storageKey: string]: DatabaseObject[] | DatabaseCollection<any>[];
+  };
+}
+
+export interface PendingWrite {
+  guildId: string;
+  storageKey: string;
+  data: DatabaseObject | DatabaseCollection<any>;
+  resolve: () => void;
+  reject: (error: Error) => void;
+}
+
+export interface PerformanceMetrics {
+  totalWrites: number;
+  batchedWrites: number;
+  avgWriteTime: number;
+  lastWriteTime: number;
 }

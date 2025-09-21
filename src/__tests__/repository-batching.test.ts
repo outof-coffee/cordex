@@ -4,8 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { repository } from '../repository';
-import { DatabaseObject, RepositoryConfig } from '../repository-types';
+import { repository, DatabaseObject, RepositoryConfig } from '../repository';
 
 // Mock lowdb
 vi.mock('lowdb/node', () => ({
