@@ -5,7 +5,7 @@
 
 import { Repository } from './repository-types';
 import { DatabaseObject, Purgeable, IdentifiedEntity } from './types';
-import { DiscordRepository, DiscordRepositoryConfig } from './discord-repository';
+import { DiscordRepository, DiscordRepositoryConfig } from './discord';
 import { EntityRegistry, entityRegistry } from './entity-registry';
 import { EntityUtils, UserDiscordEntity, ChannelDiscordEntity, TemporaryDiscordEntity, EventDiscordEntity } from './enhanced-entities';
 

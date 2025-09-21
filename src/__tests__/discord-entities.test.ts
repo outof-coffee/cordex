@@ -16,7 +16,7 @@ import {
   TempMute,
   Warning,
   CommandUsage
-} from '../discord-entities';
+} from '../discord';
 
 describe('Discord ID Validation', () => {
   describe('isValidSnowflake', () => {

@@ -9,14 +9,15 @@
 export { repository } from './repository';
 export { Repository, RepositoryConfig } from './repository-types';
 
-// Enhanced Discord repository with caching and validation
-export { DiscordRepository, DiscordRepositoryConfig } from './discord-repository';
-
 // Base types for creating Discord bot database entities
 export { DatabaseObject, DatabaseEntity, DatabaseCollection, Purgeable, IdentifiedEntity } from './types';
 
-// Discord-specific entity types and utilities
+// Discord-specific entity types, repository, and utilities
 export {
+  // Enhanced Discord repository with caching and validation
+  DiscordRepository,
+  DiscordRepositoryConfig,
+
   // Validation utilities
   isValidSnowflake,
   validateGuildId,
@@ -44,7 +45,7 @@ export {
   WarningData,
   CommandUsage,
   CommandUsageData
-} from './discord-entities';
+} from './discord';
 
 // Utility functions for conditional Discord slash command registration
 export { isDatabaseEnabled, registerObject } from './register';

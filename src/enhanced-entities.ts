@@ -3,7 +3,7 @@
  * Provides convenient base classes that combine common interfaces
  */
 
-import { DiscordEntity, validateGuildId } from './discord-entities';
+import { DiscordEntity, validateGuildId } from './discord';
 import { Purgeable, IdentifiedEntity } from './types';
 
 /**
