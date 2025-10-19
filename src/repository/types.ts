@@ -4,6 +4,9 @@ export { DatabaseObject };
 
 export interface RepositoryConfig {
   databasePath: string;
+  enableCaching?: boolean;
+  cacheTTL?: number;
+  maxCacheSize?: number;
 }
 
 export interface Repository {
@@ -31,6 +34,20 @@ export interface Repository {
     objectId: string
   ): Promise<boolean>;
   flushPendingWrites(): Promise<void>;
+
+  // Advanced query functionality
+  query<T extends DatabaseObject>(
+    EntityClass: new (...args: any[]) => T,
+    guildId: string,
+    options?: QueryOptions<T>
+  ): Promise<QueryResult<T>>;
+
+  // Count entities with optional filtering
+  count<T extends DatabaseObject>(
+    EntityClass: new (...args: any[]) => T,
+    guildId: string,
+    filter?: (entity: T) => boolean
+  ): Promise<number>;
 }
 
 // Internal repository types
@@ -53,4 +70,39 @@ export interface PerformanceMetrics {
   batchedWrites: number;
   avgWriteTime: number;
   lastWriteTime: number;
+}
+
+// Query types for advanced repository operations
+export interface QueryOptions<T> {
+  /** Filter function to apply to entities */
+  filter?: (entity: T) => boolean;
+
+  /** Sort function for ordering results */
+  sort?: (a: T, b: T) => number;
+
+  /** Maximum number of results to return */
+  limit?: number;
+
+  /** Number of results to skip */
+  offset?: number;
+
+  /** Include expired entities (for Purgeable entities) */
+  includeExpired?: boolean;
+
+  /** Maximum age in hours (for Purgeable entities) */
+  maxAgeHours?: number;
+}
+
+export interface QueryResult<T> {
+  /** The entities that matched the query */
+  entities: T[];
+
+  /** Total number of entities before limit/offset */
+  totalCount: number;
+
+  /** Whether there are more results available */
+  hasMore: boolean;
+
+  /** Query execution time in milliseconds */
+  executionTimeMs: number;
 }

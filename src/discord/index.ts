@@ -1,7 +1,6 @@
 /**
  * Discord module exports
- * Provides Discord-specific entity types, repository, and utilities
+ * Provides Discord-specific entity types and utilities
  */
 
 export * from './entities';
-export * from './repository';

@@ -6,17 +6,22 @@
  */
 
 // Main repository interface - use this for all Discord bot database operations
-export { repository, Repository, RepositoryConfig, DatabaseObject } from './repository';
+export {
+  repository,
+  Repository,
+  RepositoryConfig,
+  DatabaseObject,
+  DatabaseRepository,
+  QueryOptions,
+  QueryResult,
+  BulkOperationResult
+} from './repository';
 
 // Base types for creating Discord bot database entities
 export { DatabaseEntity, DatabaseCollection, Purgeable, IdentifiedEntity } from './types';
 
-// Discord-specific entity types, repository, and utilities
+// Discord-specific entity types and utilities
 export {
-  // Enhanced Discord repository with caching and validation
-  DiscordRepository,
-  DiscordRepositoryConfig,
-
   // Validation utilities
   isValidSnowflake,
   validateGuildId,
@@ -51,41 +56,3 @@ export { isDatabaseEnabled, registerObject } from './register';
 
 // Discord bot version utilities for command registration optimization
 export { getBotVersion, shouldRegisterCommands } from './version-utils';
-
-// Enhanced entity base classes for custom bot development
-export {
-  PurgeableDiscordEntity,
-  IdentifiedDiscordEntity,
-  PurgeableIdentifiedDiscordEntity,
-  UserDiscordEntity,
-  ChannelDiscordEntity,
-  TemporaryDiscordEntity,
-  EventDiscordEntity,
-  TypedDiscordEntity,
-  EntityUtils,
-  StorageKeyPattern
-} from './enhanced-entities';
-
-// Entity registration system
-export {
-  EntityRegistry,
-  EntityRegistration,
-  RegisterEntityOptions,
-  RegisterEntity,
-  registerEntity,
-  getEntityRegistration,
-  isEntityRegistered,
-  getAllEntityRegistrations,
-  searchEntityTypes,
-  entityRegistry
-} from './entity-registry';
-
-// Enhanced repository with advanced query capabilities
-export {
-  EnhancedRepository,
-  QueryOptions,
-  QueryResult,
-  BulkOperationResult,
-  createEnhancedRepository,
-  enhancedRepository
-} from './enhanced-repository';
