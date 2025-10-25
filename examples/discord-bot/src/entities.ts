@@ -1,222 +1,106 @@
-import { DiscordEntity, validateUserId } from '@outof-coffee/discord-wheel';
+import { DiscordEntity, validateUserId, IdentifiedEntity } from '@outof-coffee/cordex';
 
 /**
- * Player statistics interface
+ * User profile data interface
  */
-export interface PlayerStatsData {
+export interface UserProfileData {
   level: number;
   experience: number;
-  lastActivity: string;
-  commandsUsed: number;
-  achievements: string[];
-  joinedAt: string;
+  favoriteColor?: string;
+  timezone?: string;
+  createdAt: string;
 }
 
 /**
- * Player statistics entity for tracking user progression and activity
+ * UserProfile - User-owned entity demonstrating personal bot pattern
+ *
+ * Can be used in two contexts:
+ * 1. Personal/DM context: guildId = userId (user's personal data)
+ * 2. Server context: guildId = actual guild ID (per-server user data)
+ *
+ * Implements IdentifiedEntity to support id-based operations
  */
-export class PlayerStats extends DiscordEntity {
-  static readonly storageKey = 'player-stats';
+export class UserProfile extends DiscordEntity implements IdentifiedEntity {
+  static readonly storageKey = 'user-profiles';
 
+  public readonly id: string;
   public readonly userId: string;
   public readonly username: string;
   public readonly level: number;
   public readonly experience: number;
-  public readonly lastActivity: string;
-  public readonly commandsUsed: number;
-  public readonly achievements: string[];
-  public readonly joinedAt: string;
+  public readonly favoriteColor?: string;
+  public readonly timezone?: string;
+  public readonly createdAt: string;
   public readonly updatedAt: string;
 
-  constructor(guildId: string, userId: string, username: string, stats: PlayerStatsData) {
+  constructor(guildId: string, userId: string, username: string, data: UserProfileData) {
     super(guildId);
     validateUserId(userId);
-    
+
+    this.id = userId;
     this.userId = userId;
     this.username = username;
-    this.level = stats.level;
-    this.experience = stats.experience;
-    this.lastActivity = stats.lastActivity;
-    this.commandsUsed = stats.commandsUsed;
-    this.achievements = [...stats.achievements];
-    this.joinedAt = stats.joinedAt;
+    this.level = data.level;
+    this.experience = data.experience;
+    this.favoriteColor = data.favoriteColor;
+    this.timezone = data.timezone;
+    this.createdAt = data.createdAt;
     this.updatedAt = new Date().toISOString();
   }
 
   /**
-   * Create a new PlayerStats with updated experience
+   * Create updated profile with added experience
    */
-  public addExperience(amount: number): PlayerStats {
+  public addExperience(amount: number): UserProfile {
     const newExp = this.experience + amount;
-    const newLevel = Math.floor(newExp / 100) + 1; // Level up every 100 XP
-    
-    return new PlayerStats(this.guildId, this.userId, this.username, {
+    const newLevel = Math.floor(newExp / 100) + 1;
+
+    return new UserProfile(this.guildId, this.userId, this.username, {
       level: newLevel,
       experience: newExp,
-      lastActivity: new Date().toISOString(),
-      commandsUsed: this.commandsUsed + 1,
-      achievements: this.achievements,
-      joinedAt: this.joinedAt
+      favoriteColor: this.favoriteColor,
+      timezone: this.timezone,
+      createdAt: this.createdAt
     });
   }
 
   /**
-   * Create a new PlayerStats with an added achievement
+   * Check if this is a personal profile (DM context)
    */
-  public addAchievement(achievement: string): PlayerStats {
-    if (this.achievements.includes(achievement)) {
-      return this;
-    }
-
-    return new PlayerStats(this.guildId, this.userId, this.username, {
-      level: this.level,
-      experience: this.experience,
-      lastActivity: new Date().toISOString(),
-      commandsUsed: this.commandsUsed,
-      achievements: [...this.achievements, achievement],
-      joinedAt: this.joinedAt
-    });
-  }
-
-  /**
-   * Get user's unique identifier within the guild
-   */
-  public get id(): string {
-    return this.userId;
+  public isPersonal(): boolean {
+    return this.guildId === this.userId;
   }
 }
 
 /**
- * Simple guild configuration for the example bot
+ * Guild settings data interface
  */
-export interface BotGuildConfigData {
+export interface GuildSettingsData {
   prefix: string;
-  welcomeChannelId?: string;
-  modRoleId?: string;
-  enableStats: boolean;
-  enableWelcome: boolean;
+  enableLeaderboard: boolean;
+  welcomeMessage?: string;
 }
 
-export class BotGuildConfig extends DiscordEntity {
-  static readonly storageKey = 'bot-guild-configs';
+/**
+ * GuildSettings - Guild-owned entity demonstrating server configuration
+ *
+ * Stores per-guild configuration (one per guild)
+ * Does not implement IdentifiedEntity as there's only one config per guild
+ */
+export class GuildSettings extends DiscordEntity {
+  static readonly storageKey = 'guild-settings';
 
   public readonly prefix: string;
-  public readonly welcomeChannelId?: string;
-  public readonly modRoleId?: string;
-  public readonly enableStats: boolean;
-  public readonly enableWelcome: boolean;
+  public readonly enableLeaderboard: boolean;
+  public readonly welcomeMessage?: string;
   public readonly updatedAt: string;
 
-  constructor(guildId: string, config: BotGuildConfigData) {
+  constructor(guildId: string, data: GuildSettingsData) {
     super(guildId);
-    
-    this.prefix = config.prefix;
-    this.welcomeChannelId = config.welcomeChannelId;
-    this.modRoleId = config.modRoleId;
-    this.enableStats = config.enableStats;
-    this.enableWelcome = config.enableWelcome;
+
+    this.prefix = data.prefix;
+    this.enableLeaderboard = data.enableLeaderboard;
+    this.welcomeMessage = data.welcomeMessage;
     this.updatedAt = new Date().toISOString();
-  }
-}
-
-/**
- * Command usage tracking for analytics
- */
-export interface CommandLogData {
-  commandName: string;
-  userId: string;
-  username: string;
-  channelId: string;
-  timestamp: string;
-  success: boolean;
-  errorMessage?: string;
-}
-
-export class CommandLog extends DiscordEntity {
-  static readonly storageKey = 'command-logs';
-
-  public readonly commandName: string;
-  public readonly userId: string;
-  public readonly username: string;
-  public readonly channelId: string;
-  public readonly timestamp: string;
-  public readonly success: boolean;
-  public readonly errorMessage?: string;
-
-  constructor(guildId: string, data: CommandLogData) {
-    super(guildId);
-    validateUserId(data.userId);
-    
-    this.commandName = data.commandName;
-    this.userId = data.userId;
-    this.username = data.username;
-    this.channelId = data.channelId;
-    this.timestamp = data.timestamp;
-    this.success = data.success;
-    this.errorMessage = data.errorMessage;
-  }
-
-  public get id(): string {
-    return `${this.userId}-${this.commandName}-${this.timestamp}`;
-  }
-}
-
-/**
- * Warning system for moderation
- */
-export interface WarningData {
-  userId: string;
-  username: string;
-  moderatorId: string;
-  moderatorName: string;
-  reason: string;
-  timestamp: string;
-  active: boolean;
-}
-
-export class Warning extends DiscordEntity {
-  static readonly storageKey = 'warnings';
-
-  public readonly userId: string;
-  public readonly username: string;
-  public readonly moderatorId: string;
-  public readonly moderatorName: string;
-  public readonly reason: string;
-  public readonly timestamp: string;
-  public readonly active: boolean;
-  public readonly warningId: string;
-
-  constructor(guildId: string, data: WarningData) {
-    super(guildId);
-    validateUserId(data.userId);
-    validateUserId(data.moderatorId);
-    
-    this.userId = data.userId;
-    this.username = data.username;
-    this.moderatorId = data.moderatorId;
-    this.moderatorName = data.moderatorName;
-    this.reason = data.reason;
-    this.timestamp = data.timestamp;
-    this.active = data.active;
-    this.warningId = `warn-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  public get id(): string {
-    return this.warningId;
-  }
-
-  /**
-   * Create a copy of this warning marked as inactive
-   */
-  public deactivate(): Warning {
-    return new Warning(this.guildId, {
-      userId: this.userId,
-      username: this.username,
-      moderatorId: this.moderatorId,
-      moderatorName: this.moderatorName,
-      reason: this.reason,
-      timestamp: this.timestamp,
-      active: false
-    });
   }
 }

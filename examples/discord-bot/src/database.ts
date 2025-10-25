@@ -1,197 +1,102 @@
-import { repository } from '@outof-coffee/discord-wheel';
-import { PlayerStats, PlayerStatsData, BotGuildConfig, BotGuildConfigData, CommandLog, CommandLogData, Warning, WarningData } from './entities';
+import { repository } from '@outof-coffee/cordex';
+import { UserProfile, UserProfileData, GuildSettings, GuildSettingsData } from './entities';
 
 /**
  * Database service for the example Discord bot
- * Handles all database operations using the discord-wheel repository
+ * Demonstrates repository usage patterns with Cordex
  */
 export class DatabaseService {
   /**
-   * Get or create player statistics for a user
+   * Get context ID for storage
+   * - DM context: userId (personal storage)
+   * - Guild context: guildId (per-server storage)
    */
-  static async getOrCreatePlayerStats(guildId: string, userId: string, username: string): Promise<PlayerStats> {
-    const allStats = await repository.getAll(PlayerStats, guildId);
-    const existingStats = allStats.find(stats => stats.userId === userId);
-    
-    if (existingStats) {
-      return existingStats;
+  static getContextId(guildId: string | null, userId: string): string {
+    return guildId || userId;
+  }
+
+  /**
+   * Get or create user profile
+   * Works in both DM and guild contexts
+   */
+  static async getOrCreateUserProfile(
+    contextId: string,
+    userId: string,
+    username: string
+  ): Promise<UserProfile> {
+    const allProfiles = await repository.getAll(UserProfile, contextId);
+    const existing = allProfiles.find(p => p.userId === userId);
+
+    if (existing) {
+      return existing;
     }
 
-    // Create new player stats
-    const newStats = new PlayerStats(guildId, userId, username, {
+    const newProfile = new UserProfile(contextId, userId, username, {
       level: 1,
       experience: 0,
-      lastActivity: new Date().toISOString(),
-      commandsUsed: 0,
-      achievements: [],
-      joinedAt: new Date().toISOString()
+      createdAt: new Date().toISOString()
     });
 
-    await repository.store(newStats);
-    return newStats;
+    await repository.store(newProfile);
+    return newProfile;
   }
 
   /**
-   * Update player statistics
+   * Update user profile
    */
-  static async updatePlayerStats(stats: PlayerStats): Promise<void> {
-    await repository.store(stats);
+  static async updateUserProfile(profile: UserProfile): Promise<void> {
+    await repository.store(profile);
   }
 
   /**
-   * Get guild configuration or create default
+   * Award experience to user
    */
-  static async getOrCreateGuildConfig(guildId: string): Promise<BotGuildConfig> {
-    const allConfigs = await repository.getAll(BotGuildConfig, guildId);
-    const existingConfig = allConfigs[0]; // Only one config per guild
-    
-    if (existingConfig) {
-      return existingConfig;
-    }
-
-    // Create default guild config
-    const defaultConfig = new BotGuildConfig(guildId, {
-      prefix: '!',
-      enableStats: true,
-      enableWelcome: false
-    });
-
-    await repository.store(defaultConfig);
-    return defaultConfig;
+  static async awardExperience(
+    contextId: string,
+    userId: string,
+    username: string,
+    amount: number = 10
+  ): Promise<UserProfile> {
+    const profile = await this.getOrCreateUserProfile(contextId, userId, username);
+    const updated = profile.addExperience(amount);
+    await this.updateUserProfile(updated);
+    return updated;
   }
 
   /**
-   * Update guild configuration
+   * Get top users by experience (guild context only)
    */
-  static async updateGuildConfig(config: BotGuildConfig): Promise<void> {
-    await repository.store(config);
-  }
-
-  /**
-   * Log command usage
-   */
-  static async logCommand(guildId: string, data: CommandLogData): Promise<void> {
-    const log = new CommandLog(guildId, data);
-    await repository.store(log);
-  }
-
-  /**
-   * Get top players by experience in a guild
-   */
-  static async getTopPlayers(guildId: string, limit: number = 10): Promise<PlayerStats[]> {
-    const allStats = await repository.getAll(PlayerStats, guildId);
-    return allStats
+  static async getTopUsers(guildId: string, limit: number = 10): Promise<UserProfile[]> {
+    const allProfiles = await repository.getAll(UserProfile, guildId);
+    return allProfiles
       .sort((a, b) => b.experience - a.experience)
       .slice(0, limit);
   }
 
   /**
-   * Get command usage statistics
+   * Get or create guild settings (guild context only)
    */
-  static async getCommandStats(guildId: string, days: number = 7): Promise<{ commandName: string; count: number }[]> {
-    const allLogs = await repository.getAll(CommandLog, guildId);
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - days);
-    
-    const recentLogs = allLogs.filter(log => new Date(log.timestamp) > cutoff);
-    const commandCounts = new Map<string, number>();
-    
-    for (const log of recentLogs) {
-      if (log.success) {
-        commandCounts.set(log.commandName, (commandCounts.get(log.commandName) || 0) + 1);
-      }
-    }
-    
-    return Array.from(commandCounts.entries())
-      .map(([commandName, count]) => ({ commandName, count }))
-      .sort((a, b) => b.count - a.count);
-  }
+  static async getOrCreateGuildSettings(guildId: string): Promise<GuildSettings> {
+    const allSettings = await repository.getAll(GuildSettings, guildId);
+    const existing = allSettings[0];
 
-  /**
-   * Award experience to a player for using commands
-   */
-  static async awardExperience(guildId: string, userId: string, username: string, amount: number = 10): Promise<PlayerStats> {
-    const stats = await this.getOrCreatePlayerStats(guildId, userId, username);
-    const newStats = stats.addExperience(amount);
-    
-    // Check for level up achievement
-    if (newStats.level > stats.level) {
-      const levelUpStats = newStats.addAchievement(`Level ${newStats.level}`);
-      await this.updatePlayerStats(levelUpStats);
-      return levelUpStats;
-    }
-    
-    await this.updatePlayerStats(newStats);
-    return newStats;
-  }
-
-  /**
-   * Issue a warning to a user
-   */
-  static async issueWarning(guildId: string, data: WarningData): Promise<Warning> {
-    const warning = new Warning(guildId, data);
-    await repository.store(warning);
-    return warning;
-  }
-
-  /**
-   * Get active warnings for a user
-   */
-  static async getUserWarnings(guildId: string, userId: string): Promise<Warning[]> {
-    const allWarnings = await repository.getAll(Warning, guildId);
-    return allWarnings.filter(warning => warning.userId === userId && warning.active);
-  }
-
-  /**
-   * Get all warnings (active and inactive) for a user
-   */
-  static async getAllUserWarnings(guildId: string, userId: string): Promise<Warning[]> {
-    const allWarnings = await repository.getAll(Warning, guildId);
-    return allWarnings.filter(warning => warning.userId === userId);
-  }
-
-  /**
-   * Clear (deactivate) a specific warning
-   */
-  static async clearWarning(guildId: string, warningId: string): Promise<boolean> {
-    const allWarnings = await repository.getAll(Warning, guildId);
-    const warning = allWarnings.find(w => w.warningId === warningId && w.active);
-    
-    if (!warning) {
-      return false;
+    if (existing) {
+      return existing;
     }
 
-    const deactivatedWarning = warning.deactivate();
-    await repository.store(deactivatedWarning);
-    return true;
+    const defaultSettings = new GuildSettings(guildId, {
+      prefix: '!',
+      enableLeaderboard: true
+    });
+
+    await repository.store(defaultSettings);
+    return defaultSettings;
   }
 
   /**
-   * Clear all active warnings for a user
+   * Update guild settings
    */
-  static async clearAllUserWarnings(guildId: string, userId: string): Promise<number> {
-    const activeWarnings = await this.getUserWarnings(guildId, userId);
-    
-    for (const warning of activeWarnings) {
-      const deactivatedWarning = warning.deactivate();
-      await repository.store(deactivatedWarning);
-    }
-    
-    return activeWarnings.length;
-  }
-
-  /**
-   * Check if user has admin permissions (has mod role or is admin)
-   */
-  static async hasAdminPermission(guildId: string, userId: string, userRoles: string[]): Promise<boolean> {
-    const config = await this.getOrCreateGuildConfig(guildId);
-    
-    // Check if user has the configured mod role
-    if (config.modRoleId && userRoles.includes(config.modRoleId)) {
-      return true;
-    }
-    
-    // Additional checks could be added here (server owner, admin permissions, etc.)
-    return false;
+  static async updateGuildSettings(settings: GuildSettings): Promise<void> {
+    await repository.store(settings);
   }
 }

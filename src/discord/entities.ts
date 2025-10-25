@@ -3,7 +3,7 @@
  * Extends the base database types with Discord-specific patterns and validations
  */
 
-import { DatabaseEntity, IdentifiedEntity, Purgeable } from './types';
+import { DatabaseEntity, IdentifiedEntity, Purgeable } from '../types';
 
 /**
  * Validates if a string is a valid Discord Snowflake ID
@@ -50,11 +50,15 @@ export const validateRoleId = (roleId: string): void => {
 
 /**
  * Discord-specific entity base class with enhanced validation
+ * Stores guildId for Discord bot entities
  */
 export abstract class DiscordEntity extends DatabaseEntity {
+  public readonly guildId: string;
+
   constructor(guildId: string) {
     validateGuildId(guildId);
-    super(guildId);
+    super();
+    this.guildId = guildId;
   }
 }
 

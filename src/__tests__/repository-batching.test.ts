@@ -4,8 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { repository } from '../repository';
-import { DatabaseObject, RepositoryConfig } from '../repository-types';
+import { repository, DatabaseObject, RepositoryConfig, EntityRegistry } from '../repository';
 
 // Mock lowdb
 vi.mock('lowdb/node', () => ({
@@ -66,9 +65,15 @@ describe('Repository Write Batching System', () => {
     (JSONFilePreset as any).mockClear();
     (JSONFilePreset as any).mockResolvedValue(mockDbInstance);
 
+    // Create and configure entity registry
+    const registry = new EntityRegistry();
+    registry.register(TestBatchEntity, (entity) => entity.guildId);
 
-    // Initialize repository
-    await repository.initialize({ databasePath: testDatabasePath } as RepositoryConfig);
+    // Initialize repository with registry
+    await repository.initialize({
+      databasePath: testDatabasePath,
+      entityRegistry: registry
+    } as RepositoryConfig);
 
     // Ensure database instance is properly initialized for tests
     // This prevents race conditions with async timer operations
@@ -250,6 +255,10 @@ describe('Repository Write Batching System', () => {
         constructor(public guildId: string, public id: string) {}
       }
 
+      // Register the second entity type
+      const registry = (repository as any).config.entityRegistry;
+      registry.register(SecondEntityType, (entity: SecondEntityType) => entity.guildId);
+
       const entity1 = new TestBatchEntity(testGuildId, 'test-1', 'data-1');
       const entity2 = new SecondEntityType(testGuildId, 'second-1');
 
@@ -393,17 +402,6 @@ describe('Repository Write Batching System', () => {
     });
   });
 
-  describe('Error Scenarios in Batching', () => {
-    it.skip('should reject all pending promises when batch write fails', async () => {
-      // Skip this test - timer mocking with errors is complex and this functionality
-      // is not critical for the core batching system
-    });
-
-    it.skip('should continue processing new batches after a batch failure', async () => {
-      // Skip this test - timer mocking with errors is complex and this functionality  
-      // is not critical for the core batching system
-    });
-  });
 
   describe('flushPendingWrites() Method', () => {
     it('should immediately process all pending writes', async () => {

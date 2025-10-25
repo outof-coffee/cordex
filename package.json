@@ -1,8 +1,8 @@
 {
-  "name": "@outof-coffee/discord-wheel",
+  "name": "@outof-coffee/cordex",
   "version": "0.1.0",
   "type": "module",
-  "description": "Core library for data persistence per-guild in a discord bot",
+  "description": "Core data management library for Discord bots",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -34,12 +34,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/outof-coffee/discord-wheel.git"
+    "url": "git+https://github.com/outof-coffee/cordex.git"
   },
   "bugs": {
-    "url": "https://github.com/outof-coffee/discord-wheel/issues"
+    "url": "https://github.com/outof-coffee/cordex/issues"
   },
-  "homepage": "https://github.com/outof-coffee/discord-wheel#readme",
+  "homepage": "https://github.com/outof-coffee/cordex#readme",
   "dependencies": {
     "lowdb": "^7.0.1"
   },

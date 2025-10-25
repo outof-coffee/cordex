@@ -1,5 +1,6 @@
 export interface DatabaseObject {
-  guildId: string;
+  // Marker interface for database entities
+  // Collection key is determined by EntityRegistry
 }
 
 export interface DatabaseObjectConstructor {
@@ -17,15 +18,10 @@ export interface IdentifiedEntity extends DatabaseObject {
 
 export abstract class DatabaseEntity implements DatabaseObject {
   static readonly storageKey: string;
-  guildId: string;
-
-  constructor(guildId: string) {
-    this.guildId = guildId;
-  }
 }
 
 export interface DatabaseCollection<T = any> {
-  guildId: string;
+  getCollectionKey(): string;
   data: T[];
 }
 
