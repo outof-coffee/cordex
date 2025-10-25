@@ -160,8 +160,8 @@ await repository.initialize(config);
 
 This library is built with TypeScript and uses:
 - **lowdb v7.0.1** - JSON file-based database
-- **Vitest** - Testing framework
-- **TypeScript 5.8.3** - Type safety and modern JavaScript features
+- **Vitest v4** - Testing framework
+- **TypeScript 5.9** - Type safety and modern JavaScript features
 
 ## License
 
