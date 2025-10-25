@@ -56,8 +56,8 @@ export abstract class DiscordEntity extends DatabaseEntity {
   public readonly guildId: string;
 
   constructor(guildId: string) {
-    super();
     validateGuildId(guildId);
+    super();
     this.guildId = guildId;
   }
 }
