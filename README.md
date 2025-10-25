@@ -112,14 +112,6 @@ const results = await enhancedRepository.query(GuildUser, {
 - `Warning` - User warning system
 - `CommandUsage` - Command usage tracking
 
-### Enhanced Entity Classes
-- `PurgeableDiscordEntity` - Entities that can be purged
-- `IdentifiedDiscordEntity` - Discord entities with unique IDs
-- `UserDiscordEntity` - User-specific Discord entities
-- `ChannelDiscordEntity` - Channel-specific entities
-- `TemporaryDiscordEntity` - Time-limited entities
-- `EventDiscordEntity` - Event-based entities
-
 ## Utilities
 
 ### Command Registration
