@@ -176,7 +176,7 @@ This stores user stats per guild: `db["guild-123"]["user-stats"]` contains all u
 Entities that track their own expiration:
 
 ```typescript
-import { DiscordEntity, IdentifiedEntity, validateUserId } from '@outof-coffee/discord-wheel';
+import { DiscordEntity, IdentifiedEntity, validateUserId } from '@outof-coffee/cordex';
 
 export class TempBoost extends DiscordEntity implements IdentifiedEntity {
   static readonly storageKey = 'temp-boosts';
