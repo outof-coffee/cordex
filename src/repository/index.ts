@@ -1,5 +1,5 @@
-import { Repository, RepositoryConfig, DatabaseData, PendingWrite, PerformanceMetrics, QueryOptions, QueryResult } from './types';
-import { DatabaseObject, DatabaseCollection, Purgeable, IdentifiedEntity } from '../types';
+import { Repository, RepositoryConfig, DatabaseData, PendingWrite, PerformanceMetrics, QueryOptions, QueryResult } from './types.js';
+import { DatabaseObject, DatabaseCollection, Purgeable, IdentifiedEntity } from '../types.js';
 
 interface CacheEntry<T> {
   data: T;
@@ -619,5 +619,5 @@ export interface BulkOperationResult {
 export const repository: Repository = new DatabaseRepository();
 
 // Exports
-export { Repository, RepositoryConfig, DatabaseObject, QueryOptions, QueryResult, EntityRegistry, CollectionKeyExtractor, EntityRegistration } from './types';
+export { Repository, RepositoryConfig, DatabaseObject, QueryOptions, QueryResult, EntityRegistry, CollectionKeyExtractor, EntityRegistration } from './types.js';
 export { DatabaseRepository };

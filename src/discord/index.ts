@@ -3,4 +3,4 @@
  * Provides Discord-specific entity types and utilities
  */
 
-export * from './entities';
+export * from './entities.js';

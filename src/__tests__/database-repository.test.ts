@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { DatabaseRepository, EntityRegistry } from '../repository';
-import { DatabaseObject, IdentifiedEntity } from '../types';
+import { DatabaseRepository, EntityRegistry } from '../repository/index.js';
+import { DatabaseObject, IdentifiedEntity } from '../types.js';
 
 class TestEntity implements DatabaseObject {
   static readonly storageKey = 'test-entities';

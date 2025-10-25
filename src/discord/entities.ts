@@ -3,7 +3,7 @@
  * Extends the base database types with Discord-specific patterns and validations
  */
 
-import { DatabaseEntity, IdentifiedEntity, Purgeable } from '../types';
+import { DatabaseEntity, IdentifiedEntity, Purgeable } from '../types.js';
 
 /**
  * Validates if a string is a valid Discord Snowflake ID

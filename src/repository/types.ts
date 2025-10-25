@@ -1,8 +1,8 @@
-import { DatabaseObject, DatabaseCollection, Purgeable, IdentifiedEntity } from '../types';
-import { EntityRegistry } from './registry';
+import { DatabaseObject, DatabaseCollection, Purgeable, IdentifiedEntity } from '../types.js';
+import { EntityRegistry } from './registry.js';
 
 export { DatabaseObject };
-export { EntityRegistry, CollectionKeyExtractor, EntityRegistration } from './registry';
+export { EntityRegistry, CollectionKeyExtractor, EntityRegistration } from './registry.js';
 
 export interface RepositoryConfig {
   databasePath: string;

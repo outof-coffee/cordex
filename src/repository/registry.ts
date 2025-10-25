@@ -2,7 +2,7 @@
  * Entity registry for mapping entity types to collection key extraction strategies
  */
 
-import { DatabaseObject } from '../types';
+import { DatabaseObject } from '../types.js';
 
 /**
  * Function that extracts the collection key from an entity instance

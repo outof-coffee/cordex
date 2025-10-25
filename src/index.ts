@@ -18,10 +18,10 @@ export {
   EntityRegistry,
   CollectionKeyExtractor,
   EntityRegistration
-} from './repository';
+} from './repository/index.js';
 
 // Base types for creating Discord bot database entities
-export { DatabaseEntity, DatabaseCollection, Purgeable, IdentifiedEntity } from './types';
+export { DatabaseEntity, DatabaseCollection, Purgeable, IdentifiedEntity } from './types.js';
 
 // Discord-specific entity types and utilities
 export {
@@ -52,10 +52,10 @@ export {
   WarningData,
   CommandUsage,
   CommandUsageData
-} from './discord';
+} from './discord/index.js';
 
 // Utility functions for conditional Discord slash command registration
-export { isDatabaseEnabled, registerObject } from './register';
+export { isDatabaseEnabled, registerObject } from './register.js';
 
 // Discord bot version utilities for command registration optimization
-export { getBotVersion, shouldRegisterCommands } from './version-utils';
+export { getBotVersion, shouldRegisterCommands } from './version-utils.js';

@@ -1,4 +1,4 @@
-import { DatabaseObjectConstructor } from './types';
+import { DatabaseObjectConstructor } from './types.js';
 
 /**
  * Object type registry for in-memory tracking of registered Discord bot object types
@@ -22,9 +22,9 @@ export const isDatabaseEnabled = (databasePath: string | null): boolean => {
   if (databasePath === null) {
     return false;
   }
-  
+
   // Import repository here to avoid circular dependency
-  const { repository } = require('./repository');
+  const { repository } = require('./repository/index.js');
   return repository.isInitialized();
 };
 
