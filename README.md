@@ -1,6 +1,6 @@
-# Discord Wheel
+# Cordex
 
-Core library for data persistence per-guild in a Discord bot. Provides type-safe database operations using lowdb with JSON file storage, specifically designed for Discord bot development.
+Core data management library for Discord bots. Provides type-safe database operations using lowdb with JSON file storage, specifically designed for Discord bot development.
 
 ## Features
 
@@ -15,13 +15,13 @@ Core library for data persistence per-guild in a Discord bot. Provides type-safe
 ## Installation
 
 ```bash
-npm install @outof-coffee/discord-wheel
+npm install @outof-coffee/cordex
 ```
 
 ## Quick Start
 
 ```typescript
-import { repository, GuildConfig } from '@outof-coffee/discord-wheel';
+import { repository, GuildConfig } from '@outof-coffee/cordex';
 
 // Initialize the repository
 await repository.initialize({ databasePath: './data' });
@@ -45,7 +45,7 @@ const config = await repository.load(GuildConfig, '123456789012345678');
 The main interface for all database operations:
 
 ```typescript
-import { repository } from '@outof-coffee/discord-wheel';
+import { repository } from '@outof-coffee/cordex';
 
 // Save an entity
 await repository.save(entity);
@@ -61,7 +61,7 @@ await repository.delete(EntityClass, id);
 Pre-built entity types for common Discord bot use cases:
 
 ```typescript
-import { GuildUser, ChannelConfig, TempMute } from '@outof-coffee/discord-wheel';
+import { GuildUser, ChannelConfig, TempMute } from '@outof-coffee/cordex';
 
 // User data per guild
 const user = new GuildUser({
@@ -83,7 +83,7 @@ const channelConfig = new ChannelConfig({
 Advanced querying with caching and validation:
 
 ```typescript
-import { enhancedRepository } from '@outof-coffee/discord-wheel';
+import { enhancedRepository } from '@outof-coffee/cordex';
 
 // Query with options
 const results = await enhancedRepository.query(GuildUser, {
@@ -124,7 +124,7 @@ const results = await enhancedRepository.query(GuildUser, {
 
 ### Command Registration
 ```typescript
-import { isDatabaseEnabled, registerObject } from '@outof-coffee/discord-wheel';
+import { isDatabaseEnabled, registerObject } from '@outof-coffee/cordex';
 
 // Conditional registration based on database state
 if (isDatabaseEnabled()) {
@@ -134,7 +134,7 @@ if (isDatabaseEnabled()) {
 
 ### Version Management
 ```typescript
-import { getBotVersion, shouldRegisterCommands } from '@outof-coffee/discord-wheel';
+import { getBotVersion, shouldRegisterCommands } from '@outof-coffee/cordex';
 
 const version = getBotVersion();
 if (shouldRegisterCommands(version)) {
@@ -145,7 +145,7 @@ if (shouldRegisterCommands(version)) {
 ## Configuration
 
 ```typescript
-import { repository, RepositoryConfig } from '@outof-coffee/discord-wheel';
+import { repository, RepositoryConfig } from '@outof-coffee/cordex';
 
 const config: RepositoryConfig = {
   databasePath: './data',

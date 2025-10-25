@@ -61,17 +61,17 @@ class DatabaseRepository implements Repository {
 
       // Process all pending writes in batch
       for (const write of batch) {
-        const { guildId, storageKey, data } = write;
+        const { collectionKey, storageKey, data } = write;
 
-        if (!this.dbInstance.data[guildId]) {
-          this.dbInstance.data[guildId] = {};
+        if (!this.dbInstance.data[collectionKey]) {
+          this.dbInstance.data[collectionKey] = {};
         }
 
-        if (!this.dbInstance.data[guildId][storageKey]) {
-          this.dbInstance.data[guildId][storageKey] = [];
+        if (!this.dbInstance.data[collectionKey][storageKey]) {
+          this.dbInstance.data[collectionKey][storageKey] = [];
         }
 
-        (this.dbInstance.data[guildId][storageKey] as any[]).push(data);
+        (this.dbInstance.data[collectionKey][storageKey] as any[]).push(data);
       }
 
       // Single write for entire batch
@@ -113,13 +113,13 @@ class DatabaseRepository implements Repository {
   }
 
   private async storeData(
-    guildId: string,
+    collectionKey: string,
     storageKey: string,
     data: DatabaseObject | DatabaseCollection<any>
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       this.pendingWrites.push({
-        guildId,
+        collectionKey,
         storageKey,
         data,
         resolve,
@@ -162,8 +162,8 @@ class DatabaseRepository implements Repository {
     return this.initialized && this.config !== null;
   }
 
-  private getCacheKey(entityType: string, guildId: string, suffix?: string): string {
-    return suffix ? `${entityType}:${guildId}:${suffix}` : `${entityType}:${guildId}`;
+  private getCacheKey(entityType: string, collectionKey: string, suffix?: string): string {
+    return suffix ? `${entityType}:${collectionKey}:${suffix}` : `${entityType}:${collectionKey}`;
   }
 
   private getFromCache<T>(key: string): T | undefined {
@@ -222,16 +222,25 @@ class DatabaseRepository implements Repository {
     if (!this.isInitialized()) return;
 
     return this.executeWithRetry(async () => {
-      const { guildId } = object;
-      const storageKey = (object.constructor as any).storageKey;
-
-      if (!storageKey) {
-        throw new Error('Object class must have a static storageKey property');
+      if (!this.config?.entityRegistry) {
+        throw new Error(
+          'EntityRegistry is required. Pass entityRegistry to repository.initialize()'
+        );
       }
 
-      await this.storeData(guildId, storageKey, object);
+      const registration = this.config.entityRegistry.getRegistrationForInstance(object);
+      if (!registration) {
+        throw new Error(
+          `Entity ${object.constructor.name} is not registered. Use entityRegistry.register() during initialization.`
+        );
+      }
 
-      const cacheKey = this.getCacheKey(storageKey, guildId);
+      const collectionKey = registration.getCollectionKey(object);
+      const storageKey = registration.storageKey;
+
+      await this.storeData(collectionKey, storageKey, object);
+
+      const cacheKey = this.getCacheKey(storageKey, collectionKey);
       this.clearCacheByPattern(cacheKey);
     });
   }
@@ -240,14 +249,16 @@ class DatabaseRepository implements Repository {
     if (!this.isInitialized()) return;
 
     return this.executeWithRetry(async () => {
-      const { guildId } = collection;
-      await this.storeData(guildId, storageKey, collection);
+      // DatabaseCollection still uses getCollectionKey() for now
+      // as it's not a typical entity that would be registered
+      const collectionKey = collection.getCollectionKey();
+      await this.storeData(collectionKey, storageKey, collection);
     });
   }
 
   async getAll<T extends DatabaseObject>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string
+    collectionKey: string
   ): Promise<T[]> {
     if (!this.isInitialized()) return [];
 
@@ -257,7 +268,7 @@ class DatabaseRepository implements Repository {
         throw new Error('Entity class must have a static storageKey property');
       }
 
-      const cacheKey = this.getCacheKey(storageKey, guildId);
+      const cacheKey = this.getCacheKey(storageKey, collectionKey);
       const cached = this.getFromCache<T[]>(cacheKey);
       if (cached) {
         return cached;
@@ -269,19 +280,14 @@ class DatabaseRepository implements Repository {
         throw new Error('Failed to initialize database');
       }
 
-      if (!this.dbInstance.data[guildId] || !this.dbInstance.data[guildId][storageKey]) {
+      if (!this.dbInstance.data[collectionKey] || !this.dbInstance.data[collectionKey][storageKey]) {
         return [];
       }
 
-      const storedData = this.dbInstance.data[guildId][storageKey] as any[];
+      const storedData = this.dbInstance.data[collectionKey][storageKey] as any[];
 
       const result = storedData.map((item: any) => {
         try {
-          if (item.guildId) {
-            const { guildId: itemGuildId, ...otherProps } = item;
-            const propValues = Object.values(otherProps);
-            return new EntityClass(itemGuildId, ...propValues);
-          }
           return item as T;
         } catch (error) {
           return item as T;
@@ -295,7 +301,7 @@ class DatabaseRepository implements Repository {
 
   async purgeStaleItems<T extends DatabaseObject & Purgeable>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string,
+    collectionKey: string,
     maxAgeHours: number = 168
   ): Promise<number> {
     if (!this.isInitialized()) return 0;
@@ -306,7 +312,7 @@ class DatabaseRepository implements Repository {
         throw new Error('Entity class must have a static storageKey property');
       }
 
-      const allItems = await this.getAll(EntityClass, guildId);
+      const allItems = await this.getAll(EntityClass, collectionKey);
 
       const cutoffTime = new Date();
       cutoffTime.setHours(cutoffTime.getHours() - maxAgeHours);
@@ -320,7 +326,7 @@ class DatabaseRepository implements Repository {
       const purgedCount = allItems.length - freshItems.length;
 
       if (purgedCount > 0) {
-        await this.replaceAll(EntityClass, guildId, freshItems);
+        await this.replaceAll(EntityClass, collectionKey, freshItems);
       }
 
       return purgedCount;
@@ -329,7 +335,7 @@ class DatabaseRepository implements Repository {
 
   async replaceAll<T extends DatabaseObject>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string,
+    collectionKey: string,
     objects: T[]
   ): Promise<void> {
     if (!this.isInitialized()) return;
@@ -346,27 +352,27 @@ class DatabaseRepository implements Repository {
         throw new Error('Failed to initialize database');
       }
 
-      if (!this.dbInstance.data[guildId]) {
-        this.dbInstance.data[guildId] = {};
+      if (!this.dbInstance.data[collectionKey]) {
+        this.dbInstance.data[collectionKey] = {};
       }
 
-      this.dbInstance.data[guildId][storageKey] = objects;
+      this.dbInstance.data[collectionKey][storageKey] = objects;
       await this.dbInstance.write();
 
-      const cacheKey = this.getCacheKey(storageKey, guildId);
+      const cacheKey = this.getCacheKey(storageKey, collectionKey);
       this.clearCacheByPattern(cacheKey);
     });
   }
 
   async deleteById<T extends IdentifiedEntity>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string,
+    collectionKey: string,
     objectId: string
   ): Promise<boolean> {
     if (!this.isInitialized()) return false;
 
     return this.executeWithRetry(async () => {
-      const allItems = await this.getAll(EntityClass, guildId);
+      const allItems = await this.getAll(EntityClass, collectionKey);
 
       const itemIndex = allItems.findIndex((item: any) => item.id === objectId);
 
@@ -375,11 +381,11 @@ class DatabaseRepository implements Repository {
       }
 
       const updatedItems = allItems.filter((_, index) => index !== itemIndex);
-      await this.replaceAll(EntityClass, guildId, updatedItems);
+      await this.replaceAll(EntityClass, collectionKey, updatedItems);
 
       const storageKey = (EntityClass as any).storageKey;
       if (storageKey) {
-        const cacheKey = this.getCacheKey(storageKey, guildId);
+        const cacheKey = this.getCacheKey(storageKey, collectionKey);
         this.clearCacheByPattern(cacheKey);
       }
 
@@ -389,12 +395,12 @@ class DatabaseRepository implements Repository {
 
   async query<T extends DatabaseObject>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string,
+    collectionKey: string,
     options: QueryOptions<T> = {}
   ): Promise<QueryResult<T>> {
     const startTime = Date.now();
 
-    let entities = await this.getAll(EntityClass, guildId);
+    let entities = await this.getAll(EntityClass, collectionKey);
     const totalCount = entities.length;
 
     // Apply filter
@@ -429,16 +435,16 @@ class DatabaseRepository implements Repository {
 
   async count<T extends DatabaseObject>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string,
+    collectionKey: string,
     filter?: (entity: T) => boolean
   ): Promise<number> {
-    const entities = await this.getAll(EntityClass, guildId);
+    const entities = await this.getAll(EntityClass, collectionKey);
     return filter ? entities.filter(filter).length : entities.length;
   }
 
   async getById<T extends IdentifiedEntity>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string,
+    collectionKey: string,
     entityId: string
   ): Promise<T | null> {
     const storageKey = (EntityClass as any).storageKey;
@@ -446,13 +452,13 @@ class DatabaseRepository implements Repository {
       throw new Error('Entity class must have a static storageKey property');
     }
 
-    const cacheKey = this.getCacheKey(storageKey, guildId, entityId);
+    const cacheKey = this.getCacheKey(storageKey, collectionKey, entityId);
     const cached = this.getFromCache<T>(cacheKey);
     if (cached) {
       return cached;
     }
 
-    const allEntities = await this.getAll(EntityClass, guildId);
+    const allEntities = await this.getAll(EntityClass, collectionKey);
     const entity = allEntities.find(e => e.id === entityId) || null;
 
     this.setCache(cacheKey, entity);
@@ -461,11 +467,11 @@ class DatabaseRepository implements Repository {
 
   async findByField<T extends DatabaseObject, K extends keyof T>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string,
+    collectionKey: string,
     fieldName: K,
     fieldValue: T[K]
   ): Promise<T[]> {
-    const result = await this.query(EntityClass, guildId, {
+    const result = await this.query(EntityClass, collectionKey, {
       filter: (entity) => entity[fieldName] === fieldValue
     });
     return result.entities;
@@ -473,44 +479,44 @@ class DatabaseRepository implements Repository {
 
   async findOneByField<T extends DatabaseObject, K extends keyof T>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string,
+    collectionKey: string,
     fieldName: K,
     fieldValue: T[K]
   ): Promise<T | null> {
-    const results = await this.findByField(EntityClass, guildId, fieldName, fieldValue);
+    const results = await this.findByField(EntityClass, collectionKey, fieldName, fieldValue);
     return results.length > 0 ? results[0] : null;
   }
 
   async exists<T extends IdentifiedEntity>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string,
+    collectionKey: string,
     entityId: string
   ): Promise<boolean> {
-    const entity = await this.getById(EntityClass, guildId, entityId);
+    const entity = await this.getById(EntityClass, collectionKey, entityId);
     return entity !== null;
   }
 
   async getUserEntities<T extends DatabaseObject & { userId: string }>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string,
+    collectionKey: string,
     userId: string
   ): Promise<T[]> {
-    return this.findByField(EntityClass, guildId, 'userId' as keyof T, userId as T[keyof T]);
+    return this.findByField(EntityClass, collectionKey, 'userId' as keyof T, userId as T[keyof T]);
   }
 
   async getChannelEntities<T extends DatabaseObject & { channelId: string }>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string,
+    collectionKey: string,
     channelId: string
   ): Promise<T[]> {
-    return this.findByField(EntityClass, guildId, 'channelId' as keyof T, channelId as T[keyof T]);
+    return this.findByField(EntityClass, collectionKey, 'channelId' as keyof T, channelId as T[keyof T]);
   }
 
   async getActiveTemporary<T extends DatabaseObject & { isExpired(): boolean }>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string
+    collectionKey: string
   ): Promise<T[]> {
-    const result = await this.query(EntityClass, guildId, {
+    const result = await this.query(EntityClass, collectionKey, {
       filter: (entity) => !entity.isExpired()
     });
     return result.entities;
@@ -518,9 +524,9 @@ class DatabaseRepository implements Repository {
 
   async getExpiredTemporary<T extends DatabaseObject & { isExpired(): boolean }>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string
+    collectionKey: string
   ): Promise<T[]> {
-    const result = await this.query(EntityClass, guildId, {
+    const result = await this.query(EntityClass, collectionKey, {
       filter: (entity) => entity.isExpired()
     });
     return result.entities;
@@ -554,7 +560,7 @@ class DatabaseRepository implements Repository {
 
   async bulkDelete<T extends IdentifiedEntity>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string,
+    collectionKey: string,
     entityIds: string[]
   ): Promise<BulkOperationResult> {
     const startTime = Date.now();
@@ -567,7 +573,7 @@ class DatabaseRepository implements Repository {
 
     for (const entityId of entityIds) {
       try {
-        const deleted = await this.deleteById(EntityClass, guildId, entityId);
+        const deleted = await this.deleteById(EntityClass, collectionKey, entityId);
         if (deleted) {
           result.successful++;
         } else {
@@ -613,5 +619,5 @@ export interface BulkOperationResult {
 export const repository: Repository = new DatabaseRepository();
 
 // Exports
-export { Repository, RepositoryConfig, DatabaseObject, QueryOptions, QueryResult } from './types';
+export { Repository, RepositoryConfig, DatabaseObject, QueryOptions, QueryResult, EntityRegistry, CollectionKeyExtractor, EntityRegistration } from './types';
 export { DatabaseRepository };

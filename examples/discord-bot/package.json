@@ -1,7 +1,7 @@
 {
-  "name": "discord-wheel-example-bot",
+  "name": "cordex-example-bot",
   "version": "1.0.0",
-  "description": "Example Discord bot demonstrating discord-wheel library usage",
+  "description": "Example Discord bot demonstrating Cordex library usage",
   "main": "dist/index.js",
   "private": true,
   "scripts": {
@@ -11,7 +11,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@outof-coffee/discord-wheel": "file:../..",
+    "@outof-coffee/cordex": "file:../..",
     "discord.js": "^14.15.3",
     "dotenv": "^16.4.5"
   },

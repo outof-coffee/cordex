@@ -1,5 +1,5 @@
 /**
- * Discord bot database module exports
+ * Cordex - Core data management for Discord bots
  * Handles data persistence using lowdb for Discord bot applications
  *
  * Main interface: Use the `repository` singleton for all Discord bot database operations
@@ -14,7 +14,10 @@ export {
   DatabaseRepository,
   QueryOptions,
   QueryResult,
-  BulkOperationResult
+  BulkOperationResult,
+  EntityRegistry,
+  CollectionKeyExtractor,
+  EntityRegistration
 } from './repository';
 
 // Base types for creating Discord bot database entities

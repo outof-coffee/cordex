@@ -1,9 +1,12 @@
 import { DatabaseObject, DatabaseCollection, Purgeable, IdentifiedEntity } from '../types';
+import { EntityRegistry } from './registry';
 
 export { DatabaseObject };
+export { EntityRegistry, CollectionKeyExtractor, EntityRegistration } from './registry';
 
 export interface RepositoryConfig {
   databasePath: string;
+  entityRegistry?: EntityRegistry;
   enableCaching?: boolean;
   cacheTTL?: number;
   maxCacheSize?: number;
@@ -16,21 +19,21 @@ export interface Repository {
   storeCollection<T = any>(storageKey: string, collection: DatabaseCollection<T>): Promise<void>;
   getAll<T extends DatabaseObject>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string
+    collectionKey: string
   ): Promise<T[]>;
   purgeStaleItems<T extends DatabaseObject & Purgeable>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string,
+    collectionKey: string,
     maxAgeHours?: number
   ): Promise<number>;
   replaceAll<T extends DatabaseObject>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string,
+    collectionKey: string,
     objects: T[]
   ): Promise<void>;
   deleteById<T extends IdentifiedEntity>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string,
+    collectionKey: string,
     objectId: string
   ): Promise<boolean>;
   flushPendingWrites(): Promise<void>;
@@ -38,27 +41,27 @@ export interface Repository {
   // Advanced query functionality
   query<T extends DatabaseObject>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string,
+    collectionKey: string,
     options?: QueryOptions<T>
   ): Promise<QueryResult<T>>;
 
   // Count entities with optional filtering
   count<T extends DatabaseObject>(
     EntityClass: new (...args: any[]) => T,
-    guildId: string,
+    collectionKey: string,
     filter?: (entity: T) => boolean
   ): Promise<number>;
 }
 
 // Internal repository types
 export interface DatabaseData {
-  [guildId: string]: {
+  [collectionKey: string]: {
     [storageKey: string]: DatabaseObject[] | DatabaseCollection<any>[];
   };
 }
 
 export interface PendingWrite {
-  guildId: string;
+  collectionKey: string;
   storageKey: string;
   data: DatabaseObject | DatabaseCollection<any>;
   resolve: () => void;

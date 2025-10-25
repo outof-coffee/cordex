@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, Events, Message, ChatInputCommandInteraction, SlashCommandBuilder, REST, Routes } from 'discord.js';
 import { config } from 'dotenv';
-import { repository } from '@outof-coffee/discord-wheel';
+import { repository } from '@outof-coffee/cordex';
 import { DatabaseService } from './database';
 
 config();

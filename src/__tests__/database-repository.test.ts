@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { DatabaseRepository } from '../repository';
+import { DatabaseRepository, EntityRegistry } from '../repository';
 import { DatabaseObject, IdentifiedEntity } from '../types';
 
 class TestEntity implements DatabaseObject {

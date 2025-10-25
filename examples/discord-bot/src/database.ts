@@ -1,9 +1,9 @@
-import { repository } from '@outof-coffee/discord-wheel';
+import { repository } from '@outof-coffee/cordex';
 import { UserProfile, UserProfileData, GuildSettings, GuildSettingsData } from './entities';
 
 /**
  * Database service for the example Discord bot
- * Demonstrates repository usage patterns with discord-wheel
+ * Demonstrates repository usage patterns with Cordex
  */
 export class DatabaseService {
   /**

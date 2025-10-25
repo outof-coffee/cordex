@@ -1,4 +1,4 @@
-import { DiscordEntity, validateUserId, IdentifiedEntity } from '@outof-coffee/discord-wheel';
+import { DiscordEntity, validateUserId, IdentifiedEntity } from '@outof-coffee/cordex';
 
 /**
  * User profile data interface

@@ -50,11 +50,15 @@ export const validateRoleId = (roleId: string): void => {
 
 /**
  * Discord-specific entity base class with enhanced validation
+ * Stores guildId for Discord bot entities
  */
 export abstract class DiscordEntity extends DatabaseEntity {
+  public readonly guildId: string;
+
   constructor(guildId: string) {
+    super();
     validateGuildId(guildId);
-    super(guildId);
+    this.guildId = guildId;
   }
 }
 

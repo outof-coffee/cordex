@@ -1,6 +1,6 @@
-# Discord Wheel Example Bot
+# Cordex Example Bot
 
-A complete example Discord bot demonstrating the capabilities of the `@outof-coffee/discord-wheel` library. This bot showcases database persistence, user statistics tracking, moderation features, and both attention commands and slash commands.
+A complete example Discord bot demonstrating the capabilities of the `@outof-coffee/cordex` library. This bot showcases database persistence, user statistics tracking, moderation features, and both attention commands and slash commands.
 
 ## Features
 
@@ -26,7 +26,7 @@ A complete example Discord bot demonstrating the capabilities of the `@outof-cof
 - **Administrative Insights**: View usage patterns and trends
 
 ### 💾 Database Integration
-- **Persistent Storage**: All data stored using discord-wheel repository
+- **Persistent Storage**: All data stored using Cordex repository
 - **Custom Entities**: Demonstrates creating custom database entities
 - **Data Relationships**: Shows proper entity relationships and data modeling
 
@@ -164,7 +164,7 @@ switch (commandName) {
 
 ## Extending the Bot
 
-This example bot provides a foundation for building more complex Discord bots using discord-wheel. You can:
+This example bot provides a foundation for building more complex Discord bots using Cordex. You can:
 
 1. **Add New Entities**: Create custom database entities for your specific needs
 2. **Expand Commands**: Add more commands following the established patterns
@@ -174,4 +174,4 @@ This example bot provides a foundation for building more complex Discord bots us
 
 ## License
 
-This example is part of the discord-wheel library and follows the same license terms.
+This example is part of the Cordex library and follows the same license terms.
