@@ -245,6 +245,50 @@ class DatabaseRepository implements Repository {
     });
   }
 
+  async storeUnique<T extends DatabaseObject & IdentifiedEntity>(
+    object: T
+  ): Promise<boolean> {
+    if (!this.isInitialized()) return false;
+
+    return this.executeWithRetry(async () => {
+      if (!this.config?.entityRegistry) {
+        throw new Error(
+          'EntityRegistry is required. Pass entityRegistry to repository.initialize()'
+        );
+      }
+
+      const registration = this.config.entityRegistry.getRegistrationForInstance(object);
+      if (!registration) {
+        throw new Error(
+          `Entity ${object.constructor.name} is not registered. Use entityRegistry.register() during initialization.`
+        );
+      }
+
+      const collectionKey = registration.getCollectionKey(object);
+      const storageKey = registration.storageKey;
+
+      // Check if entity with this ID already exists
+      const allItems = await this.getAll(object.constructor as any, collectionKey);
+      const existingIndex = allItems.findIndex((item: any) => item.id === object.id);
+
+      let isUpdate = false;
+      if (existingIndex !== -1) {
+        // Update existing entity: replace old entry with new one
+        allItems[existingIndex] = object;
+        await this.replaceAll(object.constructor as any, collectionKey, allItems);
+        isUpdate = true;
+      } else {
+        // Insert new entity
+        await this.storeData(collectionKey, storageKey, object);
+      }
+
+      const cacheKey = this.getCacheKey(storageKey, collectionKey);
+      this.clearCacheByPattern(cacheKey);
+
+      return isUpdate; // true if updated, false if inserted
+    });
+  }
+
   async storeCollection<T = any>(storageKey: string, collection: DatabaseCollection<T>): Promise<void> {
     if (!this.isInitialized()) return;
 
@@ -374,13 +418,14 @@ class DatabaseRepository implements Repository {
     return this.executeWithRetry(async () => {
       const allItems = await this.getAll(EntityClass, collectionKey);
 
-      const itemIndex = allItems.findIndex((item: any) => item.id === objectId);
+      // Filter ALL entries matching the ID, not just the first one (Defect 2 & 3 fix)
+      const updatedItems = allItems.filter((item: any) => item.id !== objectId);
 
-      if (itemIndex === -1) {
+      // If no items were deleted, return false
+      if (updatedItems.length === allItems.length) {
         return false;
       }
 
-      const updatedItems = allItems.filter((_, index) => index !== itemIndex);
       await this.replaceAll(EntityClass, collectionKey, updatedItems);
 
       const storageKey = (EntityClass as any).storageKey;
@@ -391,6 +436,16 @@ class DatabaseRepository implements Repository {
 
       return true;
     });
+  }
+
+  async deleteUnique<T extends IdentifiedEntity>(
+    EntityClass: new (...args: any[]) => T,
+    collectionKey: string,
+    objectId: string
+  ): Promise<boolean> {
+    // Semantic alias for deleteById when working with unique entities
+    // Makes intent explicit when paired with storeUnique()
+    return this.deleteById(EntityClass, collectionKey, objectId);
   }
 
   async query<T extends DatabaseObject>(

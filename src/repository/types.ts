@@ -16,6 +16,9 @@ export interface Repository {
   initialize(config: RepositoryConfig): Promise<void>;
   isInitialized(): boolean;
   store<T extends DatabaseObject>(object: T): Promise<void>;
+  storeUnique<T extends DatabaseObject & IdentifiedEntity>(
+    object: T
+  ): Promise<boolean>;
   storeCollection<T = any>(storageKey: string, collection: DatabaseCollection<T>): Promise<void>;
   getAll<T extends DatabaseObject>(
     EntityClass: new (...args: any[]) => T,
@@ -32,6 +35,11 @@ export interface Repository {
     objects: T[]
   ): Promise<void>;
   deleteById<T extends IdentifiedEntity>(
+    EntityClass: new (...args: any[]) => T,
+    collectionKey: string,
+    objectId: string
+  ): Promise<boolean>;
+  deleteUnique<T extends IdentifiedEntity>(
     EntityClass: new (...args: any[]) => T,
     collectionKey: string,
     objectId: string

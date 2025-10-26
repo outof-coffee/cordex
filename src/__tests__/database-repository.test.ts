@@ -317,3 +317,199 @@ describe('DatabaseRepository - Business Logic Tests', () => {
     expect(result.executionTimeMs).toBeGreaterThanOrEqual(0);
   });
 });
+
+describe('DatabaseRepository - Defect Fixes for Unique Entities', () => {
+  describe('deleteById - Fixed to delete ALL matching IDs (Defects 2 & 3)', () => {
+    it('should return false when no entities match the ID', async () => {
+      const repo = new DatabaseRepository();
+      // Mock initialization first
+      vi.spyOn(repo, 'isInitialized').mockReturnValue(true);
+      const mockGetAll = vi.spyOn(repo, 'getAll').mockResolvedValue([]);
+
+      const result = await repo.deleteById(TestChannelEntity, 'test-collection', 'nonexistent-id');
+
+      expect(result).toBe(false);
+      expect(mockGetAll).toHaveBeenCalledWith(TestChannelEntity, 'test-collection');
+    });
+
+    it('should delete and return true when single entity matches the ID', async () => {
+      const repo = new DatabaseRepository();
+      vi.spyOn(repo, 'isInitialized').mockReturnValue(true);
+
+      const entity = new TestChannelEntity('123456789012345678', '222222222222222222', 'test-setting');
+      const entities = [entity];
+
+      const mockGetAll = vi.spyOn(repo, 'getAll').mockResolvedValue(entities);
+      const mockReplaceAll = vi.spyOn(repo, 'replaceAll').mockResolvedValue(undefined);
+
+      const result = await repo.deleteById(TestChannelEntity, 'test-collection', entity.id);
+
+      expect(result).toBe(true);
+      expect(mockReplaceAll).toHaveBeenCalledWith(TestChannelEntity, 'test-collection', []);
+    });
+
+    it('should delete ALL entities matching the ID (critical fix for duplicates)', async () => {
+      const repo = new DatabaseRepository();
+      vi.spyOn(repo, 'isInitialized').mockReturnValue(true);
+
+      // Create three duplicate entries with the same ID
+      const duplicateId = 'guild-123-duplicate';
+      const entity1 = new TestChannelEntity('123456789012345678', '222222222222222222', 'v1');
+      const entity2 = new TestChannelEntity('123456789012345678', '222222222222222222', 'v2');
+      const entity3 = new TestChannelEntity('123456789012345678', '222222222222222222', 'v3');
+      const otherEntity = new TestChannelEntity('123456789012345678', '222222222222222222', 'other');
+
+      // Manually set IDs to create duplicates
+      Object.defineProperty(entity1, 'id', { value: duplicateId, configurable: true });
+      Object.defineProperty(entity2, 'id', { value: duplicateId, configurable: true });
+      Object.defineProperty(entity3, 'id', { value: duplicateId, configurable: true });
+
+      const entities = [entity1, entity2, entity3, otherEntity];
+
+      const mockGetAll = vi.spyOn(repo, 'getAll').mockResolvedValue(entities);
+      const mockReplaceAll = vi.spyOn(repo, 'replaceAll').mockResolvedValue(undefined);
+
+      const result = await repo.deleteById(TestChannelEntity, 'test-collection', duplicateId);
+
+      expect(result).toBe(true);
+      // Should only have the one other entity left
+      expect(mockReplaceAll).toHaveBeenCalledWith(TestChannelEntity, 'test-collection', [otherEntity]);
+    });
+
+    it('should verify deleted entities are actually gone via query', async () => {
+      const repo = new DatabaseRepository();
+      vi.spyOn(repo, 'isInitialized').mockReturnValue(true);
+
+      const deleteId = 'to-delete-id';
+      const entity1 = new TestChannelEntity('123456789012345678', '222222222222222222', 'delete-me');
+      const entity2 = new TestChannelEntity('123456789012345678', '222222222222222222', 'keep-me');
+
+      Object.defineProperty(entity1, 'id', { value: deleteId, configurable: true });
+
+      const allEntities = [entity1, entity2];
+      const remainingEntities = [entity2];
+
+      const mockGetAll = vi.spyOn(repo, 'getAll');
+      mockGetAll.mockResolvedValueOnce(allEntities); // First call to deleteById
+      mockGetAll.mockResolvedValueOnce(remainingEntities); // Second call to verify
+
+      const mockReplaceAll = vi.spyOn(repo, 'replaceAll').mockResolvedValue(undefined);
+
+      const deleteResult = await repo.deleteById(TestChannelEntity, 'test-collection', deleteId);
+      expect(deleteResult).toBe(true);
+
+      const verifyResult = await repo.getAll(TestChannelEntity, 'test-collection');
+      expect(verifyResult).toHaveLength(1);
+      expect(verifyResult[0]).toBe(entity2);
+    });
+  });
+
+  describe('storeUnique - New method for upsert behavior (Defect 1 fix)', () => {
+    it('should insert new entity and return false when ID does not exist', async () => {
+      const repo = new DatabaseRepository();
+
+      const entity = new TestChannelEntity('123456789012345678', '222222222222222222', 'new-setting');
+
+      const mockGetAll = vi.spyOn(repo, 'getAll').mockResolvedValue([]);
+      const mockStoreData = vi.spyOn(repo as any, 'storeData').mockResolvedValue(undefined);
+      const mockInit = vi.spyOn(repo, 'isInitialized').mockReturnValue(true);
+      const mockRegistry = {
+        getRegistrationForInstance: vi.fn().mockReturnValue({
+          getCollectionKey: vi.fn().mockReturnValue('test-collection'),
+          storageKey: 'test-storage'
+        })
+      };
+      (repo as any).config = { entityRegistry: mockRegistry };
+
+      const result = await repo.storeUnique(entity);
+
+      expect(result).toBe(false); // false = inserted
+      expect(mockGetAll).toHaveBeenCalledWith(TestChannelEntity, 'test-collection');
+      expect(mockStoreData).toHaveBeenCalledWith('test-collection', 'test-storage', entity);
+    });
+
+    it('should update existing entity and return true when ID exists', async () => {
+      const repo = new DatabaseRepository();
+
+      const oldEntity = new TestChannelEntity('123456789012345678', '222222222222222222', 'old-setting');
+      const newEntity = new TestChannelEntity('123456789012345678', '222222222222222222', 'updated-setting');
+
+      // Set same ID to simulate update
+      Object.defineProperty(newEntity, 'id', { value: oldEntity.id, configurable: true });
+
+      const mockGetAll = vi.spyOn(repo, 'getAll').mockResolvedValue([oldEntity]);
+      const mockReplaceAll = vi.spyOn(repo, 'replaceAll').mockResolvedValue(undefined);
+      const mockInit = vi.spyOn(repo, 'isInitialized').mockReturnValue(true);
+      const mockRegistry = {
+        getRegistrationForInstance: vi.fn().mockReturnValue({
+          getCollectionKey: vi.fn().mockReturnValue('test-collection'),
+          storageKey: 'test-storage'
+        })
+      };
+      (repo as any).config = { entityRegistry: mockRegistry };
+
+      const result = await repo.storeUnique(newEntity);
+
+      expect(result).toBe(true); // true = updated
+      expect(mockReplaceAll).toHaveBeenCalledWith(TestChannelEntity, 'test-collection', [newEntity]);
+    });
+
+    it('should prevent duplicate IDs by updating instead of appending', async () => {
+      const repo = new DatabaseRepository();
+
+      const entity = new TestChannelEntity('123456789012345678', '222222222222222222', 'version-1');
+      const updatedEntity = new TestChannelEntity('123456789012345678', '222222222222222222', 'version-2');
+
+      // Same ID, different data
+      Object.defineProperty(updatedEntity, 'id', { value: entity.id, configurable: true });
+
+      // First storeUnique (insert)
+      const mockGetAll1 = vi.spyOn(repo, 'getAll').mockResolvedValueOnce([]);
+      const mockStoreData = vi.spyOn(repo as any, 'storeData').mockResolvedValue(undefined);
+      const mockInit = vi.spyOn(repo, 'isInitialized').mockReturnValue(true);
+      const mockRegistry = {
+        getRegistrationForInstance: vi.fn().mockReturnValue({
+          getCollectionKey: vi.fn().mockReturnValue('test-collection'),
+          storageKey: 'test-storage'
+        })
+      };
+      (repo as any).config = { entityRegistry: mockRegistry };
+
+      const result1 = await repo.storeUnique(entity);
+      expect(result1).toBe(false); // inserted
+
+      // Second storeUnique (update)
+      const mockGetAll2 = vi.spyOn(repo, 'getAll').mockResolvedValueOnce([entity]);
+      const mockReplaceAll = vi.spyOn(repo, 'replaceAll').mockResolvedValue(undefined);
+
+      const result2 = await repo.storeUnique(updatedEntity);
+      expect(result2).toBe(true); // updated
+
+      // Should only have one entity (updated, not appended)
+      expect(mockReplaceAll).toHaveBeenCalledWith(TestChannelEntity, 'test-collection', [updatedEntity]);
+    });
+  });
+
+  describe('deleteUnique - Semantic alias for deleteById', () => {
+    it('should delegate to deleteById with same signature and return value', async () => {
+      const repo = new DatabaseRepository();
+
+      const mockDeleteById = vi.spyOn(repo, 'deleteById').mockResolvedValue(true);
+
+      const result = await repo.deleteUnique(TestChannelEntity, 'test-collection', 'test-id');
+
+      expect(result).toBe(true);
+      expect(mockDeleteById).toHaveBeenCalledWith(TestChannelEntity, 'test-collection', 'test-id');
+    });
+
+    it('should return false when deleteById returns false', async () => {
+      const repo = new DatabaseRepository();
+
+      const mockDeleteById = vi.spyOn(repo, 'deleteById').mockResolvedValue(false);
+
+      const result = await repo.deleteUnique(TestChannelEntity, 'test-collection', 'nonexistent');
+
+      expect(result).toBe(false);
+    });
+  });
+});
